@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 int main(int argc, char const *argv[]) {
-	char *request_str = NULL;
 	http_t request = {
 		.server = "127.0.0.1",
 		.port = 80,
