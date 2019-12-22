@@ -1,12 +1,18 @@
 # LIBHTTP
 
+**Warning** :
+
+This library has not been tested on windows.
+
+If it does not work on windows, I encourage you to pull request.
+
 ## TODO
 
 - [X] http requests
 	- [X] IPv4
 	- [ ] IPv6
 	- [ ] auto-resolve
-	- [ ] Connection timeout
+	- [X] Connection timeout
 	- [ ] Read-timeout
 - [X] requests maker
 	- [X] unstandardised method

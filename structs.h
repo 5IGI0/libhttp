@@ -34,6 +34,9 @@ typedef struct {
 	char *server;
 	uint16_t port;
 
+	/* connection options */
+	uint32_t timeout; // in milliseconds
+
 	/* data */
 	char *path;
 	uint8_t *data;
@@ -80,10 +83,12 @@ typedef struct {
 
 typedef enum {
 	HTTP_ERROR_NOTHING,
+	HTTP_ERROR_UNKOWN,
 	HTTP_ERROR_ALLOCATION,
 	HTTP_ERROR_CONNECTION,
 	HTTP_ERROR_PARSING,
-	HTTP_ERROR_INVALID_ARG
+	HTTP_ERROR_INVALID_ARG,
+	HTTP_ERROR_TIMEOUT
 } http_errors_t;
 
 

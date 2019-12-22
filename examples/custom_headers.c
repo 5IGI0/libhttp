@@ -7,7 +7,8 @@ int main(int argc, char const *argv[]) {
 		.server = "127.0.0.1",
 		.port = 80,
 		.path = "/",
-		.method = HTTP_METHOD_GET
+		.method = HTTP_METHOD_GET,
+		.timeout = 150, // 150ms
 	};
 	http_response_t *response = NULL;
 	http_errors_t error = HTTP_ERROR_NOTHING;
