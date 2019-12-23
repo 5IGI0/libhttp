@@ -105,6 +105,13 @@ size_t http_calc_request_size(http_t request) {
 	
 	size += 19; //Connection: close\r\n
 
+	if (request.body_size != 0) {
+		size += 16;// "Content-Length: "
+		size += http_internal_calc_num_size(request.body_size);
+		size += 1; // \r\n
+	}
+	
+
 	/* headers */
 	if (request.headers != NULL) {
 		for (size_t i = 0; request.headers[i] != NULL; i++) {
@@ -116,6 +123,12 @@ size_t http_calc_request_size(http_t request) {
 	}
 
 	size += 2; // \r\n
+
+	if (request.body_size != 0) {
+		size += 2; // \r\n
+		size += request.body_size;
+	}
+	
 
 	return size;
 }
@@ -165,6 +178,14 @@ http_errors_t http_make_request(http_t request, char **output) {
 	
 	offset = http_internal_write_in_str(offset, "Connection: close\r\n", output[0]);
 
+	if (request.body_size != 0) {
+		offset = http_internal_write_in_str(offset, "Content-Length: ", output[0]);
+		offset += 1;
+		sprintf(output[0]+offset, "%ld", request.body_size);
+		offset += http_internal_calc_num_size(request.body_size)-1;
+		offset = http_internal_write_in_str(offset, "\r\n", output[0]);
+	}
+
 	/* headers */
 	if (request.headers != NULL) {
 		for (size_t i = 0; request.headers[i] != NULL; i++) {
@@ -176,6 +197,11 @@ http_errors_t http_make_request(http_t request, char **output) {
 	}
 
 	offset = http_internal_write_in_str(offset, "\r\n", output[0]);
+
+	if (request.body_size != 0) {
+		offset = http_internal_write_in_str(offset, "\r\n", output[0]);
+		memcpy(output[0]+offset, request.body, request.body_size);
+	}
 
 	return HTTP_ERROR_NOTHING;
 }

@@ -122,7 +122,6 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 		free(request_str);
 		return HTTP_ERROR_UNKOWN;
 	}
-	
  
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -139,6 +138,7 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 		
 		send(sock, request_str, http_calc_request_size(request), 0);
 		free(request_str);
+		request_str = NULL;
 
 		while (currentSize = recv(sock, output, sizeof(output)-1, 0)) {
 			
@@ -150,6 +150,8 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 	}
 	
 	closesocket(sock);
+
+	free(request_str);
 
 	http_free_parsing_data(&parsing_data);
 

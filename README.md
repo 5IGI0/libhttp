@@ -17,7 +17,7 @@ If it does not work on windows, I encourage you to pull request.
 - [X] requests maker
 	- [X] unstandardised method
 	- [X] custom headers
-	- [ ] request with body
+	- [X] request with body
 - [X] response parser
 	- [X] HTTP status
 		- [X] HTTP version

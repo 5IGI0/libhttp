@@ -48,6 +48,10 @@ typedef struct {
 	/* headers */
 	http_header_t **headers;
 
+	/* body */
+	size_t body_size;
+	uint8_t *body;
+
 } http_t;
 
 typedef enum {
