@@ -10,7 +10,7 @@ If it does not work on windows, I encourage you to pull request.
 
 - [X] http requests
 	- [X] IPv4
-	- [ ] IPv6
+	- [X] IPv6
 	- [ ] auto-resolve
 	- [X] Connection timeout
 	- [ ] Read-timeout
