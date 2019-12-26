@@ -8,7 +8,6 @@
     #include <netinet/in.h>
     #include <arpa/inet.h>
     #include <unistd.h>
-	#include <arpa/inet.h>
 	#include <fcntl.h>
 	#include <errno.h>
     #define INVALID_SOCKET -1
@@ -26,6 +25,28 @@
 #include "http_maker.h"
 #include "http_parser.h"
 
+http_errors_t http_internal_get_sockaddr(char *addr, void *output, int *addrType) {
+    int domain = AF_INET, s;
+	*addrType = 0;
+
+    for (size_t i = 0; i < 3; i++) {
+        domain = (i) ? AF_INET : AF_INET6;
+
+        if (i == 2) {
+			// TODO : resolve code
+			return HTTP_ERROR_UNIMPLEMENTED_FEATURE;
+        }
+
+        s = inet_pton(domain, addr, output);
+        if (s <= 0)
+            continue;
+        else
+            break;
+    }
+
+	*addrType = domain;
+	return HTTP_ERROR_NOTHING;
+}
 
 http_errors_t http_internal_connect(int __fd, const struct sockaddr *__addr, socklen_t __len, uint32_t timeout) {
 
@@ -100,10 +121,13 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 	char *request_str = NULL;
 	char output[10] = "";
 	SOCKET sock;
-    SOCKADDR_IN sin;
+    unsigned char sin[sizeof(struct sockaddr_in6)] = "";
+	size_t sinSize = 0;
 	size_t currentSize = 0;
 	http_parsing_data parsing_data = {};
 	http_errors_t returner = HTTP_ERROR_NOTHING;
+	unsigned char addr[sizeof(struct in6_addr)] = "";
+	int addrType = 0;
 
 	if (response[0] == NULL) {
 		response[0] = calloc(sizeof(http_response_t), 1);
@@ -122,17 +146,38 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 		free(request_str);
 		return HTTP_ERROR_UNKOWN;
 	}
- 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (sock == SOCKET_ERROR) {
+	if((returner = http_internal_get_sockaddr(request.server, addr, &addrType)) != HTTP_ERROR_NOTHING) {
 		free(request_str);
-		return HTTP_ERROR_UNKOWN;
+		return returner;
 	}
 
-	sin.sin_addr.s_addr = inet_addr(request.server);
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(request.port);
+	if (addrType == AF_INET) {
+
+		sock = socket(AF_INET, SOCK_STREAM, 0);
+		if (sock == SOCKET_ERROR) {
+			free(request_str);
+			return HTTP_ERROR_UNKOWN;
+		}
+
+		((struct sockaddr_in *)sin)->sin_addr.s_addr = inet_addr(request.server);
+		((struct sockaddr_in *)sin)->sin_family = AF_INET;
+		((struct sockaddr_in *)sin)->sin_port = htons(request.port);
+		sinSize = sizeof(struct sockaddr_in);
+	} else {
+
+		sock = socket(AF_INET6, SOCK_STREAM, 0);
+		if (sock == SOCKET_ERROR) {
+			free(request_str);
+			return HTTP_ERROR_UNKOWN;
+		}
+
+		((struct sockaddr_in6 *)sin)->sin6_addr = *((struct in6_addr *)addr);
+		((struct sockaddr_in6 *)sin)->sin6_family = AF_INET6;
+		((struct sockaddr_in6 *)sin)->sin6_port = htons(request.port);
+		sinSize = sizeof(struct sockaddr_in6);
+	}
+	
 
 	if((returner = http_internal_connect(sock, (SOCKADDR*)&sin, sizeof(sin), request.timeout)) == HTTP_ERROR_NOTHING) {
 		

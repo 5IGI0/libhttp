@@ -1,5 +1,16 @@
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
+
+#ifdef __unix__
+#include <arpa/inet.h>
+#endif
+
+_Bool http_internal_isIPv6(const char *addr) {
+	struct in6_addr result;
+
+	return (inet_pton(AF_INET6, addr, &result) == 1) ? true : false;
+}
 
 size_t http_internal_write_in_str(size_t offset, const char *str, char *to) {
 	if (str == NULL)

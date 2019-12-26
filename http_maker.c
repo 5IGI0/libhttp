@@ -90,9 +90,13 @@ size_t http_calc_request_size(http_t request) {
 	size += 10; // HTTP/1.1\r\n
 
 	if (!header_exist("host", request)) {
+		
 		size += 6; // "host: "
 		if (request.server == NULL)
 			return 0;
+
+		if (http_internal_isIPv6(request.server))
+			size += 2; // [<host>]
 		
 		size += strlen(request.server);
 
@@ -167,8 +171,13 @@ http_errors_t http_make_request(http_t request, char **output) {
 	offset = http_internal_write_in_str(offset, " HTTP/1.1\r\n", output[0]);
 
 	if (!header_exist("host", request)) {
+		_Bool IPv6 = http_internal_isIPv6(request.server);
 		offset = http_internal_write_in_str(offset, "host: ", output[0]);
+		if (IPv6)
+			offset = http_internal_write_in_str(offset, "[", output[0]);
 		offset = http_internal_write_in_str(offset, request.server, output[0]);
+		if (IPv6)
+			offset = http_internal_write_in_str(offset, "]", output[0]);
 		offset = http_internal_write_in_str(offset, "\r\n", output[0]);
 	}
 
