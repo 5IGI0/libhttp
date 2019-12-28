@@ -40,7 +40,6 @@ typedef struct {
 
 	/* data */
 	char *path;
-	uint8_t *data;
 
 	/* method */
 	http_method_t method;
