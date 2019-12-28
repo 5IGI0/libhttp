@@ -36,6 +36,7 @@ typedef struct {
 
 	/* connection options */
 	uint32_t timeout; // in milliseconds
+	uint32_t read_timeout; // in milliseconds
 
 	/* data */
 	char *path;
@@ -93,7 +94,8 @@ typedef enum {
 	HTTP_ERROR_PARSING,
 	HTTP_ERROR_INVALID_ARG,
 	HTTP_ERROR_TIMEOUT,
-	HTTP_ERROR_UNIMPLEMENTED_FEATURE
+	HTTP_ERROR_UNIMPLEMENTED_FEATURE,
+	HTTP_ERROR_READ_TIMEOUT
 } http_errors_t;
 
 

@@ -25,6 +25,44 @@
 #include "http_maker.h"
 #include "http_parser.h"
 
+http_errors_t http_internal_recv(int __fd, void *__buf, size_t __n, int __flags, uint32_t timeout, size_t *receivedDataSize) {
+
+	struct timeval tv = {(timeout/1000), (timeout%1000)*1000};
+	fd_set set;
+	FD_ZERO(&set);
+	FD_SET(__fd, &set);
+
+	if (timeout == 0) {
+
+		if ((*receivedDataSize = recv(__fd, __buf, __n, __flags)) >= 0) {
+			return HTTP_ERROR_NOTHING;
+		} else {
+			return HTTP_ERROR_CONNECTION;
+		}
+		
+	} else {
+
+		while (1) {
+
+			if(select(__fd+1, &set, NULL, NULL, &tv) == 0) {
+				return HTTP_ERROR_READ_TIMEOUT;
+			}
+
+			*receivedDataSize = recv(__fd, __buf, __n, __flags);
+
+			if (*receivedDataSize >= 0) {
+				return HTTP_ERROR_NOTHING;
+			} else {
+				return HTTP_ERROR_UNKOWN;
+			}
+			
+		}
+		
+	}
+	
+
+}
+
 http_errors_t http_internal_get_sockaddr(char *addr, void *output, int *addrType) {
     int domain = AF_INET, s;
 	*addrType = 0;
@@ -50,14 +88,14 @@ http_errors_t http_internal_get_sockaddr(char *addr, void *output, int *addrType
 
 http_errors_t http_internal_connect(int __fd, const struct sockaddr *__addr, socklen_t __len, uint32_t timeout) {
 
-	struct timeval tv = {0, timeout*1000};
+	struct timeval tv = {(timeout/1000), (timeout%1000)*1000};
 	long arg = 0;
 	fd_set fd = {};
 	int tmp = 0;
 	socklen_t lon = 0;
 	int valopt = 0;
 
-	if (tv.tv_usec == 0) {
+	if (timeout == 0) {
 
 		if (connect(__fd, __addr, __len) != SOCKET_ERROR) {
 			return HTTP_ERROR_NOTHING;
@@ -94,6 +132,7 @@ http_errors_t http_internal_connect(int __fd, const struct sockaddr *__addr, soc
 						} 
 						break; 
 					} else {
+						errno = 0;
 						return HTTP_ERROR_TIMEOUT;
 					}
 				}
@@ -112,6 +151,7 @@ http_errors_t http_internal_connect(int __fd, const struct sockaddr *__addr, soc
 			return HTTP_ERROR_UNKOWN;
 		}
 
+		errno = 0;
 		return HTTP_ERROR_NOTHING;
 	}
 	
@@ -128,6 +168,10 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 	http_errors_t returner = HTTP_ERROR_NOTHING;
 	unsigned char addr[sizeof(struct in6_addr)] = "";
 	int addrType = 0;
+	struct timeval startTime = {};
+	struct timeval currentTime = {};
+	uint32_t readTimeout = 0;
+	uint32_t readTime = 0;
 
 	if (response[0] == NULL) {
 		response[0] = calloc(sizeof(http_response_t), 1);
@@ -184,13 +228,33 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 		send(sock, request_str, http_calc_request_size(request), 0);
 		free(request_str);
 		request_str = NULL;
+		gettimeofday(&startTime, NULL);
 
-		while (currentSize = recv(sock, output, sizeof(output)-1, 0)) {
+		readTimeout = request.read_timeout;
+
+		while (
+			(returner = http_internal_recv(sock, output, sizeof(output)-1, 0, readTimeout, &currentSize)) == HTTP_ERROR_NOTHING
+			&& currentSize
+			) {
 			
 			returner = http_parse_data(&parsing_data, output, currentSize);
 
 			if (returner != HTTP_ERROR_NOTHING)
 				break;
+
+			if (request.read_timeout != 0) {
+				gettimeofday(&currentTime, NULL);
+				
+				readTime = (currentTime.tv_sec-startTime.tv_sec)*1000;
+				readTime += (currentTime.tv_usec-startTime.tv_usec)/1000;
+
+				if (readTime > readTimeout) {
+					returner = HTTP_ERROR_READ_TIMEOUT;
+				}
+				
+				
+				readTimeout = request.read_timeout - readTime;
+			}
 		}
 	}
 	
