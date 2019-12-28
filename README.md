@@ -13,7 +13,7 @@ If it does not work on windows, I encourage you to pull request.
 	- [X] IPv6
 	- [ ] auto-resolve
 	- [X] Connection timeout
-	- [ ] Read-timeout
+	- [X] Read-timeout
 - [X] requests maker
 	- [X] unstandardised method
 	- [X] custom headers
