@@ -101,6 +101,9 @@ size_t http_calc_request_size(http_t request) {
 		size += strlen(request.server);
 
 		size += 2; // \r\n
+
+		if (request.port != 80)
+			size += http_internal_calc_num_size(request.port)+1;
 	}
 
 	if (!header_exist("Accept-Encoding", request)) {
@@ -178,6 +181,10 @@ http_errors_t http_make_request(http_t request, char **output) {
 		offset = http_internal_write_in_str(offset, request.server, output[0]);
 		if (IPv6)
 			offset = http_internal_write_in_str(offset, "]", output[0]);
+		if (request.port != 80) {
+			sprintf(output[0]+offset+1, ":%hu", request.port);
+			offset += http_internal_calc_num_size(request.port)+1;
+		}
 		offset = http_internal_write_in_str(offset, "\r\n", output[0]);
 	}
 
