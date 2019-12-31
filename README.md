@@ -25,7 +25,7 @@ If it does not work on windows, I encourage you to pull request.
 		- [ ] status text
 	- [X] headers
 		- [X] parse
-		- [ ] Custom writer function
+		- [X] Custom writer function
 	- [X] Body
 		- [X] parse
-		- [ ] Custom writer function
+		- [X] Custom writer function

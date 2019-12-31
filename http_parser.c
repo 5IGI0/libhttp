@@ -13,7 +13,7 @@ size_t http_internal_len_line(char *line, size_t text_size /* security */) {
 	return i;
 }
 
-http_errors_t http_parse_data(http_parsing_data *parsingData, char *dataReceived, size_t dataSize) {
+http_errors_t http_parse_data(http_parsing_data *parsingData, char *dataReceived, size_t dataSize, http_t request) {
 	size_t tmp = 0;
 	void *tmp_ptr = NULL;
 
@@ -63,25 +63,38 @@ http_errors_t http_parse_data(http_parsing_data *parsingData, char *dataReceived
 
 			if (parsingData->response->content_size == 0) {
 				
-				parsingData->response->content = calloc(dataSize-dataOffset, 1);
+				if(request.body_writer == NULL) {
 
-				if (parsingData->response->content == NULL)
-					return HTTP_ERROR_ALLOCATION;
+					parsingData->response->content = calloc(dataSize-dataOffset, 1);
 
-				memcpy(parsingData->response->content, dataReceived+dataOffset, dataSize-dataOffset);
+					if (parsingData->response->content == NULL)
+						return HTTP_ERROR_ALLOCATION;
 
-				parsingData->response->content_size = dataSize-dataOffset;
+					memcpy(parsingData->response->content, dataReceived+dataOffset, dataSize-dataOffset);
 
+					parsingData->response->content_size = dataSize-dataOffset;
+
+				} else {
+					(*request.body_writer)(dataReceived+dataOffset, dataSize-dataOffset, &request.body_writer_data);
+				}
+				
 				break;
 
 			} else {
+
+				if(request.body_writer == NULL) {
+
+					parsingData->response->content = realloc(parsingData->response->content, parsingData->response->content_size+dataSize);
+
+					if (parsingData->response->content == NULL)
+						return HTTP_ERROR_ALLOCATION;
+
+					memcpy(parsingData->response->content+parsingData->response->content_size, dataReceived, dataSize);
+
+				} else {
+					(*request.body_writer)(dataReceived, dataSize, &request.body_writer_data);
+				}
 				
-				parsingData->response->content = realloc(parsingData->response->content, parsingData->response->content_size+dataSize);
-
-				if (parsingData->response->content == NULL)
-					return HTTP_ERROR_ALLOCATION;
-
-				memcpy(parsingData->response->content+parsingData->response->content_size, dataReceived, dataSize);
 
 				parsingData->response->content_size += dataSize;
 
@@ -129,7 +142,10 @@ http_errors_t http_parse_data(http_parsing_data *parsingData, char *dataReceived
 
 			memcpy(value, parsingData->currentLine+tmp+2, parsingData->currentLineUsed-tmp-4);
 
-			http_add_header(name, value, &parsingData->response->headers);
+			if (request.headers_writer == NULL)
+				http_add_header(name, value, &parsingData->response->headers);
+			else
+				(*request.headers_writer) (name, value, request.headers_writer_data);
 
 			free(name);
 			free(value);

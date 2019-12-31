@@ -52,6 +52,12 @@ typedef struct {
 	size_t body_size;
 	uint8_t *body;
 
+	/* write functions */
+	void (*headers_writer)(char *name, char *value, void **to_write);
+	void *headers_writer_data;
+	void (*body_writer)(uint8_t *data, size_t size, void **write_data);
+	void *body_writer_data;
+
 } http_t;
 
 typedef enum {

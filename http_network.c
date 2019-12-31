@@ -237,7 +237,7 @@ http_errors_t http_send_request(http_t request, http_response_t **response) {
 			&& currentSize
 			) {
 			
-			returner = http_parse_data(&parsing_data, output, currentSize);
+			returner = http_parse_data(&parsing_data, output, currentSize, request);
 
 			if (returner != HTTP_ERROR_NOTHING)
 				break;

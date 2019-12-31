@@ -5,6 +5,6 @@
 
 #include "structs.h"
 
-http_errors_t http_parse_data(http_parsing_data *parsingData, char *dataReceived, size_t dataSize);
+http_errors_t http_parse_data(http_parsing_data *parsingData, char *dataReceived, size_t dataSize, http_t request);
 
 #endif
