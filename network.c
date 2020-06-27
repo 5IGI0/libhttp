@@ -149,14 +149,16 @@ bool http_execute(http_request *request) {
     if(!http_intern_send(socket, request->path, strlen(request->path), MSG_NOSIGNAL)) return false;
     if(!http_intern_send(socket, " HTTP/1.1\r\n", 11, MSG_NOSIGNAL)) return false;
     if(!http_intern_send(socket, "Connection: close\r\n", 19, MSG_NOSIGNAL)) return false;
-    if(!http_intern_send(socket, "Host: ", 6, MSG_NOSIGNAL)) return false;
-    if(!http_intern_send(socket, request->address, strlen(request->address), MSG_NOSIGNAL)) return false;
-    if(!http_intern_send(socket, "\r\n", 2, MSG_NOSIGNAL)) return false;
+    if(http_intern_getHeaderValue("Host", request->headers) == NULL) {
+        if(!http_intern_send(socket, "Host: ", 6, MSG_NOSIGNAL)) return false;
+        if(!http_intern_send(socket, request->address, strlen(request->address), MSG_NOSIGNAL)) return false;
+        if(!http_intern_send(socket, "\r\n", 2, MSG_NOSIGNAL)) return false;
+    }
     
-    if(request->headers != NULL) {
+    if(request->header_size) {
         for (size_t i = 0; request->headers[i] != NULL; i++) {
             if(!http_intern_send(socket, request->headers[i]->key, strlen(request->headers[i]->key), MSG_NOSIGNAL)) return false;
-            if(!http_intern_send(socket, " ", 1, MSG_NOSIGNAL)) return false;
+            if(!http_intern_send(socket, ": ", 2, MSG_NOSIGNAL)) return false;
             if(!http_intern_send(socket, request->headers[i]->value, strlen(request->headers[i]->value), MSG_NOSIGNAL)) return false;
             if(!http_intern_send(socket, "\r\n", 2, MSG_NOSIGNAL)) return false;
         }
@@ -194,5 +196,6 @@ bool http_execute(http_request *request) {
         }
     }
 
+    close(socket);
     return true;
 }

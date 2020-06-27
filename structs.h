@@ -26,10 +26,8 @@ typedef struct __http_request {
     http_method method;
     char *custom_method;
     http_header **headers;
-
-    // connection
-    int socket;
-
+    size_t header_size;
+    
     // reading
     size_t (*data_writer) (uint8_t *data, size_t n, void *obj);
     void *data_obj;
