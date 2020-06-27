@@ -3,5 +3,7 @@
 
 #include "structs.h"
 #include "memory.h"
+#include "tools.h"
+#include "network.h"
 
 #endif
